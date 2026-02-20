@@ -160,65 +160,6 @@ agnirt writes `audit_log_<asset>_<timestamp>.json`:
 }
 ```
 
-## Binary Requirements
-
-### agnirt (450MB+)
-
-**Location:** `bin/linux-x64/agnirt`
-
-**Requirements:**
-- Linux x64 system
-- Vulkan support (GPU or software rendering)
-- ~2GB RAM per render (parallel execution)
-- ~14ms per 16-render batch on modern GPU
-
-**Dependencies (bundled):**
-- `libcrt_vulkan.so` — Vulkan runtime
-- `libOpenImageDenoise.so.2` — Denoising library
-- `assets/sunny_rose_garden_4k.exr` — HDRI environment map
-- `assets/uv_checker_512.png` — UV reference texture
-
-**Building from source:** See [agnirt repository](https://github.com/pulze/agnirt)
-
-## Troubleshooting
-
-### Node doesn't appear in ComfyUI
-
-**Solution:**
-```bash
-# Verify Python can import the node
-cd ComfyUI/custom_nodes/ComfyUI-Pulse-MeshAudit
-python3 -c "from mesh_audit_node import PulseMeshAudit; print('OK')"
-
-# Check ComfyUI logs for import errors
-```
-
-### "agnirt failed" error
-
-**Possible causes:**
-- File path is incorrect or file doesn't exist
-- File format not supported
-- agnirt binary missing or not executable
-
-**Debug:**
-```bash
-# Test agnirt directly
-cd bin/linux-x64
-LD_LIBRARY_PATH=$(pwd) ./agnirt vulkan /path/to/mesh.glb \
-  -headless -shading-mode all --camera perspective \
-  -o /tmp/test.png
-```
-
-### Asset Stats panel not showing
-
-**Possible causes:**
-- audit_log.json not found (agnirt binary issue)
-- ComfyUI temp directory different from expected
-
-**Check logs:**
-- Server console: `[MeshAudit]` debug messages
-- Browser console (F12): JavaScript errors
-
 ## Contributing
 
 Contributions welcome! Please:
@@ -237,18 +178,4 @@ Free for non-commercial use. Commercial use requires explicit written permission
 
 See [LICENSE](LICENSE) file for full details.
 
-## Credits
 
-- **agnirt** — [pulze/agnirt](https://github.com/pulze/agnirt) headless Vulkan renderer
-- **ComfyUI** — [comfyui](https://github.com/comfyanonymous/ComfyUI) node framework
-- **glTF Sample Assets** — [KhronosGroup](https://github.com/KhronosGroup/glTF-Sample-Assets)
-
-## Support
-
-For issues, questions, or feature requests:
-- Open an [Issue](https://github.com/yourusername/ComfyUI-Pulse-MeshAudit/issues)
-- Check [existing issues](https://github.com/yourusername/ComfyUI-Pulse-MeshAudit/issues) first
-
----
-
-**Status:** Production ready | **Last Updated:** February 2026

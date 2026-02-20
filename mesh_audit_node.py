@@ -1,6 +1,7 @@
 import subprocess
 import time
 import os
+import json
 from uuid import uuid4
 import folder_paths
 
@@ -26,6 +27,68 @@ MODE_DISPLAY = {
     "geometry-analysis":  "Geo Analysis",
     "sliver-triangles":   "Sliver Tri",
 }
+
+
+def _parse_audit_log(log_path, total_faces):
+    """
+    Parse audit_log.json and extract mesh statistics.
+
+    Args:
+        log_path: Path to audit_log.json file
+        total_faces: Total face count (used to calculate degenerate % if needed)
+
+    Returns:
+        Dict with keys: scene, geometry, quality_metrics
+        Returns None if file not found or parse error
+    """
+    try:
+        with open(log_path, 'r') as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Warning: Could not parse audit_log.json: {e}")
+        return None
+
+    try:
+        # Extract scene metadata
+        asset_name = data.get("asset", {}).get("name", "Unknown")
+        timestamp = data.get("asset", {}).get("timestamp", "N/A")
+
+        # Extract geometry stats
+        scene = data.get("scene_stats", {})
+        edge_count = scene.get("edge_count", 0)
+        face_count = scene.get("face_count", 0)
+        vertex_count = scene.get("vertex_count", 0)
+
+        # Extract validation metrics
+        validation = data.get("validation", {})
+        degen_count = validation.get("degenerate_triangles", 0)
+        inverted_count = validation.get("inverted_triangles", 0)
+        sliver_data = validation.get("sliver_triangles", {})
+        sliver_pct = sliver_data.get("percentage", 0.0) if isinstance(sliver_data, dict) else 0.0
+
+        # Calculate percentages (avoid division by zero)
+        degen_pct = (degen_count / face_count * 100) if face_count > 0 else 0.0
+        inverted_pct = (inverted_count / face_count * 100) if face_count > 0 else 0.0
+
+        return {
+            "scene": {
+                "name": asset_name,
+                "timestamp": timestamp
+            },
+            "geometry": {
+                "edge_count": edge_count,
+                "face_count": face_count,
+                "vertex_count": vertex_count
+            },
+            "quality_metrics": {
+                "degenerate_triangles_pct": round(degen_pct, 2),
+                "sliver_triangles_pct": round(sliver_pct, 2),
+                "inverted_triangles_pct": round(inverted_pct, 2)
+            }
+        }
+    except Exception as e:
+        print(f"Warning: Error extracting stats from audit_log.json: {e}")
+        return None
 
 
 class PulseMeshAudit:
@@ -91,12 +154,37 @@ class PulseMeshAudit:
                 images.append({"filename": filename, "subfolder": "", "type": "temp"})
                 labels.append(f"{CAMERA_DISPLAY[cam]} • {MODE_DISPLAY[mode]}")
 
-        return {
+        # Locate and parse audit_log.json if available
+        # agnirt creates audit_log_<name>_<timestamp>.json, find the latest one
+        asset_stats = None
+        import glob
+        audit_logs = glob.glob(os.path.join(temp_dir, "audit_log_*.json"))
+        print(f"[MeshAudit] Temp dir: {temp_dir}")
+        print(f"[MeshAudit] Found audit logs: {audit_logs}")
+        if audit_logs:
+            # Use the most recently created audit_log
+            audit_log_path = max(audit_logs, key=os.path.getctime)
+            print(f"[MeshAudit] Parsing audit log: {audit_log_path}")
+            asset_stats = _parse_audit_log(audit_log_path, len(MODES) * len(CAMERAS))
+            print(f"[MeshAudit] Asset stats result: {asset_stats}")
+        else:
+            print(f"[MeshAudit] Note: audit_log_*.json not found in {temp_dir}")
+            # List all files in temp dir for debugging
+            all_files = os.listdir(temp_dir)
+            print(f"[MeshAudit] Files in temp_dir: {all_files[:10]}")
+
+        response = {
             "ui": {
                 "images": images,
                 "mesh_audit_carousel": [{"labels": labels}],
             }
         }
+
+        # Add asset_stats if parsing succeeded
+        if asset_stats:
+            response["ui"]["asset_stats"] = asset_stats
+
+        return response
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):

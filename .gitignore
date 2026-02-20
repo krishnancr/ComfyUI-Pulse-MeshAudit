@@ -1,0 +1,83 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Temporary files
+*.log
+*.bak
+*.orig
+*.backup
+
+# Test/dev artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# ComfyUI temp/cache (user-generated, not repo)
+temp/
+output/
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Local development
+.env
+.env.local
+local_config.json
+
+# Git
+.git/
+.gitignore
+
+# Node (if any web tooling added later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Keep important files even if they match patterns above
+!bin/linux-x64/agnirt
+!bin/linux-x64/*.so*
+!bin/linux-x64/assets/
+!docs/

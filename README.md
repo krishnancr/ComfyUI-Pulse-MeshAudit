@@ -23,19 +23,28 @@ A ComfyUI custom node for auditing 3D mesh files by rendering them with a headle
 - Dark-themed UI matching carousel design
 - Responsive layout that adapts to node size
 
-🔍 **Real agnirt Integration**
-- Uses bundled agnirt headless renderer binary
+🔍 **Pathtracer Integration**
+- Uses bundled headless renderer binary
 - Generates 16 PNG renders per execution (~14ms)
-- Automatic audit_log.json parsing for stats
+
+## Screenshots
+
+![MeshAudit Carousel View](docs/MeshAudit-0.png)
+
+![MeshAudit Render Example 1](docs/MeshAudit-1.png)
+
+![MeshAudit Render Example 2](docs/MeshAudit-2.png)
+
+![MeshAudit Render Example 3](docs/MeshAudit-3.png)
 
 ## Installation
 
 ### Requirements
 
 - **ComfyUI** (latest)
-- **Linux x64** system (Windows/macOS support via agnirt binary availability)
+- **Linux x64** system (Windows WIP)
 - **Python 3.8+**
-- **~500MB** disk space for agnirt binary and assets
+- **~500MB** disk space for binary and assets
 
 ### Steps
 
@@ -46,10 +55,9 @@ git clone https://github.com/yourusername/ComfyUI-Pulse-MeshAudit.git
 cd ComfyUI-Pulse-MeshAudit
 ```
 
-2. **Verify agnirt binary:**
+2. **Verify binary:**
 ```bash
 ls -lh bin/linux-x64/agnirt
-# Should show executable with ~450MB size
 ```
 
 3. **Restart ComfyUI:**
@@ -80,85 +88,9 @@ python3 main.py
 
 ### Example Mesh Files
 
-Test with [glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets):
-```bash
-# Download sample
-wget https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BrainStem/glTF-Binary/BrainStem.glb
+Test with assets/ArmoredWarrior_00005_.glb 
+Example workflow file here : workflows/mesh_audit.json
 
-# Use full path in node: /path/to/BrainStem.glb
-```
-
-## Technical Details
-
-### Architecture
-
-```
-mesh_audit_node.py (Python Backend)
-├── Parse file_path input
-├── Execute: bin/linux-x64/agnirt vulkan <file>
-│   └── Outputs 16 PNG renders + audit_log.json
-├── Parse audit_log.json for mesh stats
-└── Return UI response with images + stats
-
-web/js/mesh_audit_carousel.js (JavaScript Frontend)
-├── Register ComfyUI extension
-├── Build 16-image carousel grid
-├── Add image click → fullscreen viewer
-├── Add keyboard navigation (←/→/ESC)
-└── Build/display Asset Stats accordion
-```
-
-### Node Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `file_path` | STRING | Path to mesh file (.glb/.obj/.gltf/.fbx) |
-| Return Type | () | Output node (no connections) |
-| `IS_CHANGED` | Time-based | Always re-executes on run |
-
-### agnirt Command
-
-```bash
-agnirt vulkan <file_path> \
-  -headless \
-  -shading-mode all \
-  --camera perspective front right left \
-  -o <temp_dir>/ma_<run_id>.png
-```
-
-This generates 16 files:
-- `ma_<run_id>_pathtracing_perspective.png`
-- `ma_<run_id>_wireframe_front.png`
-- ... (12 more)
-- `ma_<run_id>_sliver-triangles_left.png`
-
-### Audit Log Format
-
-agnirt writes `audit_log_<asset>_<timestamp>.json`:
-
-```json
-{
-  "asset": {
-    "name": "BrainStem",
-    "timestamp": "2026-02-20 16:21:30"
-  },
-  "scene_stats": {
-    "edge_count": 39875,
-    "face_count": 20066,
-    "vertex_count": 21178,
-    ...
-  },
-  "validation": {
-    "degenerate_triangles": 10,
-    "inverted_triangles": 50,
-    "sliver_triangles": {
-      "count": 100,
-      "percentage": 8.34
-    }
-  },
-  "status": "PASS"
-}
-```
 
 ## Contributing
 

@@ -89,4 +89,5 @@ yarn.lock
 !bin/linux-x64/*.so*
 !bin/linux-x64/assets/
 !docs/
+!docs/*.png
 

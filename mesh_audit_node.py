@@ -107,9 +107,14 @@ class PulseMeshAudit:
     FUNCTION = "execute"
 
     def execute(self, file_path):
-        # Resolve relative paths against ComfyUI's input directory
+        # Resolve relative paths — check output directory first, then input directory
         if not os.path.isabs(file_path):
-            file_path = os.path.join(folder_paths.get_input_directory(), file_path)
+            output_candidate = os.path.join(folder_paths.get_output_directory(), file_path)
+            input_candidate = os.path.join(folder_paths.get_input_directory(), file_path)
+            if os.path.isfile(output_candidate):
+                file_path = output_candidate
+            else:
+                file_path = input_candidate
 
         if not os.path.isfile(file_path):
             raise FileNotFoundError(f"Mesh file not found: {file_path}")
@@ -124,7 +129,8 @@ class PulseMeshAudit:
         prev_ldpath = env.get("LD_LIBRARY_PATH", "")
         env["LD_LIBRARY_PATH"] = f"{AGNIRT_DIR}:{prev_ldpath}" if prev_ldpath else AGNIRT_DIR
 
-        result = subprocess.run(
+        print("[MeshAudit] Starting agnirt...")
+        proc = subprocess.Popen(
             [
                 AGNIRT_BIN, "vulkan", file_path,
                 "-headless",
@@ -134,14 +140,29 @@ class PulseMeshAudit:
             ],
             cwd=AGNIRT_DIR,   # agnirt reads assets/ relative to cwd
             env=env,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
         )
 
-        if result.returncode != 0:
+        stdout_lines = []
+        for line in proc.stdout:
+            line = line.rstrip()
+            stdout_lines.append(line)
+            print(f"[agnirt] {line}", flush=True)
+
+        proc.wait()
+        stderr_out = proc.stderr.read()
+
+        if proc.returncode != 0:
             raise RuntimeError(
-                f"agnirt failed (rc={result.returncode}):\n{result.stderr[-1000:]}"
+                f"agnirt failed (rc={proc.returncode}):\n{stderr_out[-1000:]}"
             )
+
+        # Expose result-like interface for downstream code
+        class _Result:
+            stdout = "\n".join(stdout_lines)
+        result = _Result()
 
         # Build image list + carousel labels in camera-outer, mode-inner order
         images = []

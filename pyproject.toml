@@ -8,6 +8,6 @@ license = {file = "LICENSE"}
 Repository = "https://github.com/krishnancr/ComfyUI-Pulse-MeshAudit"
 
 [tool.comfy]
-PublisherId = "pulse"
+PublisherId = "krishnancr"
 DisplayName = "MeshAudit"
 Icon = ""

@@ -1,2 +1,2 @@
 [apt]
-packages = ["libvulkan1"]
+packages = ["libvulkan1", "vulkan-tools"]

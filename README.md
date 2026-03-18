@@ -13,7 +13,6 @@ A ComfyUI custom node for auditing 3D mesh files by rendering them with a headle
 - Click any render to view fullscreen in centered modal
 - Navigate with **← →** arrow keys to explore different views
 - **ESC** key or **✕** button to close
-- Image counter and label display
 
 📊 **Asset Statistics Panel**
 - Collapsible accordion with three categories:
@@ -25,7 +24,14 @@ A ComfyUI custom node for auditing 3D mesh files by rendering them with a headle
 
 🔍 **Pathtracer Integration**
 - Uses bundled headless renderer binary
-- Generates 16 PNG renders per execution (~14ms)
+- Generates 16 PNG renders per execution
+
+## Platform Support
+
+| Platform | Status | GPU Requirement |
+|----------|--------|----------------|
+| Linux x64 (Ubuntu/Debian) | Supported | Vulkan-capable GPU |
+| Windows x64 | Supported | Vulkan-capable GPU |
 
 ## Screenshots
 
@@ -42,33 +48,48 @@ A ComfyUI custom node for auditing 3D mesh files by rendering them with a headle
 ### Requirements
 
 - **ComfyUI** (latest)
-- **Linux x64** system (Windows WIP)
 - **Python 3.8+**
+- **Vulkan-capable GPU** (NVIDIA, AMD, or Intel) with up-to-date drivers
 - **~500MB** disk space for binary and assets
+- **Windows only:** [Visual C++ 2015-2022 Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe) (usually pre-installed)
+- **Linux only:** `libvulkan1` — see manual install steps below
 
-### Steps
+### Via ComfyUI Manager
+
+1. Open ComfyUI Manager
+2. Search for **"Pulse MeshAudit"**
+3. Click **Install**
+
+ComfyUI Manager automatically installs `libvulkan1` on Linux via `comfy-env.toml`. No extra steps needed on Windows.
+
+### Manual Install
 
 1. **Clone into ComfyUI custom_nodes:**
+
 ```bash
 cd /path/to/ComfyUI/custom_nodes
-git clone https://github.com/yourusername/ComfyUI-Pulse-MeshAudit.git
+git clone https://github.com/krishnancr/ComfyUI-Pulse-MeshAudit.git
 cd ComfyUI-Pulse-MeshAudit
 ```
 
-2. **Verify binary:**
+2. **Install Vulkan runtime (Linux only):**
+
 ```bash
-ls -lh bin/linux-x64/agnirt
+sudo apt install libvulkan1
 ```
 
+> **Windows:** Vulkan is provided by your GPU drivers — no extra install needed. If you see a missing DLL error on launch, install the [VC++ 2015-2022 Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+
 3. **Restart ComfyUI:**
+
 ```bash
 # From ComfyUI root
 python3 main.py
 ```
 
 4. **Verify installation:**
-   - In ComfyUI UI, search for "PulseMeshAudit" node
-   - Node should appear in Pulse/MeshAudit category
+   - In ComfyUI, search for **"PulseMeshAudit"** node
+   - Node should appear under **Pulse/MeshAudit** category
 
 ## Usage
 

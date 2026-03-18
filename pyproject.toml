@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-pulse-meshaudit"
-description = "Visualization tools and audit for 3D assets running on your GPU (Vulkan or CUDA (WIP)). Linux only for now!"
+description = "Visualization tools and audit for 3D assets running on your GPU (Vulkan). Supports Linux x64 and Windows x64."
 version = "0.0.1"
 license = {file = "LICENSE"}
 

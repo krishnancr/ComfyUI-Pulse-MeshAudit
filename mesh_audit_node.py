@@ -136,6 +136,7 @@ class PulseMeshAudit:
                 "-headless",
                 "-shading-mode", "all",
                 "--camera", "perspective", "front", "right", "left",
+                "-env", "../../assets/sunny_rose_garden_4k.exr",
                 "-o", output_base,
             ],
             cwd=AGNIRT_DIR,   # agnirt reads assets/ relative to cwd

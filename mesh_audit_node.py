@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import time
 import os
 import json
@@ -7,8 +8,12 @@ import folder_paths
 
 # Path to the agnirt binary bundled with this plugin
 PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
-AGNIRT_DIR = os.path.join(PLUGIN_DIR, "bin", "linux-x64")
-AGNIRT_BIN = os.path.join(AGNIRT_DIR, "agnirt")
+if sys.platform == "win32":
+    AGNIRT_DIR = os.path.join(PLUGIN_DIR, "bin", "win-x64")
+    AGNIRT_BIN = os.path.join(AGNIRT_DIR, "agnirt.exe")
+else:
+    AGNIRT_DIR = os.path.join(PLUGIN_DIR, "bin", "linux-x64")
+    AGNIRT_BIN = os.path.join(AGNIRT_DIR, "agnirt")
 
 # agnirt output segment names (must match what the binary emits)
 CAMERAS = ["perspective", "front", "right", "left"]
@@ -168,8 +173,8 @@ class PulseMeshAudit:
         # Build image list + carousel labels in camera-outer, mode-inner order
         images = []
         labels = []
-        for cam in CAMERAS:
-            for mode in MODES:
+        for mode in MODES:
+            for cam in CAMERAS:
                 filename = f"ma_{run_id}_{mode}_{cam}.png"
                 full_path = os.path.join(temp_dir, filename)
                 if not os.path.isfile(full_path):

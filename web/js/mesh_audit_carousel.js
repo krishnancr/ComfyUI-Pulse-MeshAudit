@@ -189,7 +189,7 @@ app.registerExtension({
                 row.style.cssText = "display:grid; grid-template-columns:repeat(4,1fr); gap:2px; padding:0 2px 2px;";
 
                 CAMERAS.forEach((cam, camIdx) => {
-                    const idx = camIdx * 4 + modeIdx;
+                    const idx = modeIdx * 4 + camIdx;
                     const imgData = images[idx];
 
                     const cell = document.createElement("div");
@@ -205,7 +205,7 @@ app.registerExtension({
 
                     // Click to view fullscreen with navigation
                     cell.addEventListener("click", () => {
-                        let currentIdx = camIdx * 4 + modeIdx;
+                        let currentIdx = modeIdx * 4 + camIdx;
 
                         const viewer = document.createElement("div");
                         viewer.style.cssText = `
@@ -248,7 +248,7 @@ app.registerExtension({
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            overflow: auto;
+                            overflow: hidden;
                             flex: 1;
                         `;
                         const fullImg = document.createElement("img");
@@ -256,9 +256,25 @@ app.registerExtension({
                             max-width: 100%;
                             max-height: 100%;
                             object-fit: contain;
+                            transform-origin: center;
+                            transition: transform 0.1s ease;
                         `;
                         imgContainer.appendChild(fullImg);
                         viewer.appendChild(imgContainer);
+
+                        // Wheel zoom
+                        let zoomScale = 1;
+                        const resetZoom = () => {
+                            zoomScale = 1;
+                            fullImg.style.transform = "scale(1)";
+                        };
+                        imgContainer.addEventListener("wheel", (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+                            zoomScale = Math.min(Math.max(zoomScale * factor, 0.5), 10);
+                            fullImg.style.transform = `scale(${zoomScale})`;
+                        }, { passive: false });
 
                         // Navigation footer
                         const footer = document.createElement("div");
@@ -272,17 +288,18 @@ app.registerExtension({
                         `;
                         footer.innerHTML = `
                             <span id="nav-info"></span>
-                            <span id="shortcuts">← → to navigate · ESC to close</span>
+                            <span id="shortcuts">← → navigate · scroll to zoom · ESC close</span>
                         `;
                         viewer.appendChild(footer);
 
                         document.body.appendChild(viewer);
 
                         const updateImage = () => {
+                            resetZoom();
                             const imgData = images[currentIdx];
                             fullImg.src = imgUrl(imgData);
-                            const cam = CAMERAS[Math.floor(currentIdx / 4)];
-                            const mode = MODES[currentIdx % 4];
+                            const mode = MODES[Math.floor(currentIdx / 4)];
+                            const cam = CAMERAS[currentIdx % 4];
                             document.getElementById("img-title").textContent = `${mode} — ${cam}`;
                             document.getElementById("nav-info").textContent = `Image ${currentIdx + 1} / ${images.length}`;
                         };
@@ -344,7 +361,37 @@ app.registerExtension({
             }
 
             this.addDOMWidget("mesh_audit_carousel", "div", widgetElement, { serialize: false });
-            this.setSize([this.size[0], this.computeSize()[1]]);
+
+            // Ensure the node is wide enough for carousel + stats side-by-side
+            const MIN_NODE_WIDTH = 700;
+            const initialWidth = Math.max(this.size[0], MIN_NODE_WIDTH);
+            this.setSize([initialWidth, this.computeSize()[1]]);
+
+            // Recalculate height after all thumbnails have loaded.
+            // Double-rAF ensures the browser has completed two layout passes
+            // so offsetHeight (read inside computeSize) is fully settled.
+            const thumbImgs = widgetElement.querySelectorAll("img");
+            let remaining = thumbImgs.length;
+            const doResize = () => {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        this.setSize([this.size[0], this.computeSize()[1]]);
+                        app.graph.setDirtyCanvas(true, true);
+                    });
+                });
+            };
+            if (remaining === 0) {
+                doResize();
+            } else {
+                const onImg = () => { if (--remaining <= 0) doResize(); };
+                thumbImgs.forEach((img) => {
+                    if (img.complete) onImg();
+                    else {
+                        img.addEventListener("load",  onImg, { once: true });
+                        img.addEventListener("error", onImg, { once: true });
+                    }
+                });
+            }
         };
 
         node.onRemoved = function () {
